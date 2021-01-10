@@ -1,0 +1,176 @@
+Sub 巨集_次序表_自動分攤單價(control As IRibbonControl)
+    If checkIsSEQ Then
+        Call 分攤單價
+    End If
+
+End Sub
+
+
+'選定欄位
+Sub 分攤單價()
+Dim i As String
+Dim vx, bx, fx As Integer
+Dim vy, by, fy As Integer
+Dim py, pys, feex, feey As Integer
+'Dim mprice, pprice As Integer
+Dim j As Double
+
+py = 0
+y = 0
+x = 0
+j = 0
+i = InputBox("決包廠商", "今天也要加油唷", "請輸入欲比價廠商")
+mp = InputBox("輸入帶料金額", "今天也要加油唷", "請給我一個金額")
+pp = InputBox("輸入工資金額", "今天也要加油唷", "請給我一個金額")
+'MsgBox mp
+'MsgBox pp
+
+For y = 1 To 6
+  For x = 1 To 26
+   If Cells(y, x) = i Then
+   'If Cells(y, x) = "鑫昌正" Then
+    vx = x
+    vy = y
+    py = y
+    'MsgBox "決包廠商" & "y=" & y & "x=" & x
+    ElseIf Cells(y, x).Value = "預算" Then
+    bx = x
+    by = y
+    'MsgBox "預算" & "y=" & y & "x=" & x
+    ElseIf Cells(y, x).Value = "擬議價" Then
+    fx = x
+    fy = y
+    'MsgBox "擬議價" & "y=" & y & "x=" & x
+   End If
+  Next
+Next
+'找到目標之單價
+'vy = vy + 2
+'by = by + 2
+py = py + 2
+pys = py
+'-------------------------------------------------------------------------------
+
+If mp > 0 Then '若無帶料項，則不會跑帶料部份
+
+ Do '計算帶料項
+   If Cells(py, vx) < Cells(py, bx) Then '廠商報價低於預算，以廠報為值
+        Cells(py, fx) = Cells(py, vx) * 0.7
+   Else: Cells(py, fx) = Cells(py, bx) * 0.7 '廠商報價高於等於預算，以預算為值
+   End If
+  '計算單項總價
+   Cells(py, fx + 1) = Round((Cells(py, fx) * Cells(py, 5)), 1)
+   py = py + 1
+   
+ Loop Until Cells(py, 1).Value = "帶料小計" '算到帶料小計為止
+
+ '帶料管理費
+ Cells(py + 1, fx + 1) = mp - Cells(py, fx + 1)
+ '帶料管理費%數
+ Cells(py + 1, fx) = Cells(py + 1, fx + 1) / Cells(py, fx + 1)
+ feex = fx
+ feey = py + 1
+
+ If Cells(feey, feex) > 0.2 Then
+
+ j = 1.01
+  Do
+    py = pys
+      
+    Do
+      'If Cells(py, fx) < Cells(py, bx) And Cells(py, fx) < Cells(py, bx) Then
+      '   Cells(py, fx) = Round(((Cells(py, fx) * j)), 0)
+      'End If
+      'If Cells(py, fx) >= Cells(py, bx) Then
+         Cells(py, fx) = Round(((Cells(py, fx) * j)), 0)
+      'End If
+         
+      If Cells(py, fx) > Cells(py, bx) * 1.99 Then
+         Cells(py, fx) = Cells(py, bx) * 1.99 '小於預算三顆星
+      End If
+      
+      If Cells(py, fx) > Cells(py, vx) Then '小於廠商報價
+         Cells(py, fx) = Cells(py, vx)
+      End If
+      
+      
+      
+      
+      '計算單項總價
+      Cells(py, fx + 1) = Round((Cells(py, fx) * Cells(py, 5)), 0)
+      py = py + 1
+    Loop Until Cells(py, 1).Value = "帶料小計"
+     '帶料管理費
+     Cells(py + 1, fx + 1) = mp - Cells(py, fx + 1)
+     '帶料管理費%數
+     Cells(py + 1, fx) = Cells(py + 1, fx + 1) / Cells(py, fx + 1)
+
+    j = j + 0.001
+    
+    If j > 1.99 Then
+    MsgBox "帶料出現三顆星囉"
+    Exit Do
+    End If
+  Loop Until Cells(feey, feex) < 0.2
+
+ End If
+ py = py + 5 '跳到工資第一項單價
+
+End If
+
+pys1 = py
+'-------------------------------------------------------------------------------
+'計算工資項
+Do
+'單價初始值取預算與廠報之低值
+  If Cells(py, vx) < Cells(py, bx) Then '廠商報價低於預算，以廠報為值
+       Cells(py, fx) = Cells(py, vx) * 0.7
+  Else: Cells(py, fx) = Cells(py, bx) * 0.7 '廠商報價高於等於預算，以預算為值
+  End If
+ '計算單項總價
+  Cells(py, fx + 1) = Round((Cells(py, fx) * Cells(py, 5)), 1)
+  py = py + 1
+Loop Until Cells(py, 1).Value = "工資小計" '算到工資小計為止
+'工資管理費
+Cells(py + 1, fx + 1) = pp - Cells(py, fx + 1)
+'工資管理費%數
+Cells(py + 1, fx) = Cells(py + 1, fx + 1) / Cells(py, fx + 1)
+feex = fx
+feey = py + 1
+
+'迭代使管理費小於20%------------------------------------------------------------
+If Cells(feey, feex) > 0.2 Then
+ j = 1.01
+ Do
+   py = pys1
+      
+   Do
+     'If Cells(py, fx) >= Cells(py, bx) Then
+        Cells(py, fx) = Round(((Cells(py, fx) * j)), 0)
+        If Cells(py, fx) > Cells(py, bx) * 1.99 Then
+           Cells(py, fx) = Cells(py, bx) * 1.99 '小於預算三顆星
+        End If
+        
+        If Cells(py, fx) > Cells(py, vx) Then '小於廠商報價
+           Cells(py, fx) = Cells(py, vx)
+        End If
+      'End If
+'計算單項總價
+     Cells(py, fx + 1) = Round((Cells(py, fx) * Cells(py, 5)), 0)
+     py = py + 1
+   Loop Until Cells(py, 1).Value = "工資小計"
+'工資管理費
+    Cells(py + 1, fx + 1) = pp - Cells(py, fx + 1)
+'工資管理費%數
+    Cells(py + 1, fx) = Cells(py + 1, fx + 1) / Cells(py, fx + 1)
+    j = j + 0.001
+'提醒視窗
+    If j > 1.99 Then
+    MsgBox "工資出現三顆星囉"
+    Exit Do
+    End If
+ Loop Until Cells(feey, feex) < 0.2
+End If
+
+
+End Sub
